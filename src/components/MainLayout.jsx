@@ -1,14 +1,20 @@
+// src/components/MainLayout.jsx
 import React from 'react';
-import Sidebar from './Sidebar';
 import { Outlet } from 'react-router-dom';
+import Header from './Header';
+import Footer from './Footer';
 
 function MainLayout() {
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="ml-64 p-6 w-full">
+    <div className="flex flex-col min-h-screen"> {/* Full height with flexbox */}
+      <Header />
+
+      {/* Content area with flex-grow to push footer down */}
+      <div className="flex-1 w-full">
         <Outlet />
       </div>
+
+      {/* <Footer /> */}
     </div>
   );
 }
