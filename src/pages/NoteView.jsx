@@ -1,4 +1,3 @@
-// src/pages/NoteView.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, NavLink } from "react-router-dom";
 
@@ -6,6 +5,10 @@ const NoteView = () => {
   const { noteId } = useParams(); // Retrieve the noteId from the URL
   const [note, setNote] = useState(null);
   const [chapters, setChapters] = useState([]);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  // Get user ID from localStorage
+  const userId = localStorage.getItem("user_id");
 
   // Fetch the note data and chapters when the component mounts
   useEffect(() => {
@@ -27,27 +30,117 @@ const NoteView = () => {
       }
     };
 
+    const fetchBookmarkStatus = async () => {
+      if (!userId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost/skillswap/backend/check_bookmark.php?user_id=${userId}&note_id=${noteId}`
+        );
+        const data = await response.json();
+
+        if (data.bookmarked) {
+          setIsBookmarked(true);
+        }
+      } catch (error) {
+        console.error("Error checking bookmark status:", error);
+      }
+    };
+
     fetchNoteData();
-  }, [noteId]);
+    fetchBookmarkStatus();
+  }, [noteId, userId]);
 
   // If the note is not yet loaded
   if (!note) return <div>Loading...</div>;
+
+  const handleBookmarkClick = async () => {
+    if (!userId) {
+      console.error("User not logged in. Can't add/remove bookmark.");
+      return;
+    }
+
+    try {
+      if (isBookmarked) {
+        // Remove bookmark
+        const response = await fetch("http://localhost/skillswap/backend/remove_bookmark.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            note_id: noteId,
+          }),
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          setIsBookmarked(false);
+          console.log("Bookmark removed.");
+        } else {
+          console.error("Error removing bookmark:", data.message);
+        }
+      } else {
+        // Add bookmark
+        const response = await fetch("http://localhost/skillswap/backend/add_bookmark.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            note_id: noteId,
+          }),
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          setIsBookmarked(true);
+          console.log("Bookmark added.");
+        } else {
+          console.error("Error adding bookmark:", data.message);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+    }
+  };
 
   return (
     <div>
       <div className="mt-8 p-8 max-w-3xl mx-auto bg-white rounded-md shadow-md">
         <div className="mb-4">
-          <div className="w-full h-96 bg-gray-100 rounded-lg mb-6 flex items-center justify-center relative">
+          <div className="w-full h-96 rounded-lg mb-6 flex items-center justify-center relative">
             <img
-              src={"backend/" + note.cover_image} // Path to cover image
+              src={"../backend/" + note.cover_image} // Path to cover image
               alt={note.title}
-              className="w-full h-64 object-cover mb-4"
+              className="w-full h-full object-cover mb-4"
             />
           </div>
           <div className="flex justify-between">
             <h1 className="text-3xl font-semibold text-gray-800 mb-2">
               {note.title}
             </h1>
+            <div
+              className="cursor-pointer"
+              onClick={handleBookmarkClick}
+              title={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill={isBookmarked ? "yellow" : "none"}
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M17 3h4a2 2 0 0 1 2 2v16l-8-4-8 4V5a2 2 0 0 1 2-2h4"></path>
+              </svg>
+            </div>
           </div>
           <p className="text-gray-600 text-md mb-4">
             Author: {note.author || "Unknown"}

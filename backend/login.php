@@ -1,60 +1,45 @@
 <?php
-session_start();
-header('Content-Type: application/json');
-include 'db_config.php';
+header("Content-Type: application/json");
+include "db_config.php"; // Make sure this file establishes your DB connection
 
-// Read raw POST data
-$requestPayload = file_get_contents("php://input");
-$data = json_decode($requestPayload, true);
-
-// Get email and password from JSON data
+// Get input data
+$data = json_decode(file_get_contents("php://input"), true);
 $email = $data['email'] ?? '';
 $password = $data['password'] ?? '';
 
 // Validate input
 if (empty($email) || empty($password)) {
-    echo json_encode(['success' => false, 'message' => 'Email and password are required.']);
-    exit();
+    echo json_encode(["success" => false, "message" => "Email and password are required."]);
+    exit;
 }
 
-// Prepare query
-$query = "SELECT * FROM user WHERE email = ?";
-$stmt = $conn->prepare($query);
+// Prepare and execute query
+$sql = "SELECT user_id, email, password FROM user WHERE email = ?";
+$stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
 
-if ($result->num_rows === 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid email or password.']);
-    exit();
+if ($result->num_rows === 1) {
+    $user = $result->fetch_assoc();
+
+    // Verify password
+    if (password_verify($password, $user['password'])) {
+        // Login successful
+        echo json_encode([
+            "success" => true,
+            "message" => "Login successful",
+            "user_id" => $user['user_id'] // Include user_id in the response
+        ]);
+    } else {
+        // Password does not match
+        echo json_encode(["success" => false, "message" => "Invalid credentials."]);
+    }
+} else {
+    // User not found
+    echo json_encode(["success" => false, "message" => "User not found."]);
 }
 
-$user = $result->fetch_assoc();
-
-if (!password_verify($password, $user['password'])) {
-    echo json_encode(['success' => false, 'message' => 'Invalid email or password.']);
-    exit();
-}
-
-// Set session variables
-$_SESSION['user'] = [
-    'id' => $user['id'],
-    'name' => $user['name'],
-    'email' => $user['email'],
-    'profile_image' => $user['profile_image'] ?? null
-];
-
-// $_SESSION['test'] = 'test_value';
-// echo json_encode(['success' => true, 'message' => 'Login successful.']);
-
-// Test session assignment
-if (empty($_SESSION['user'])) {
-    error_log("Session assignment failed."); // Log to server error log
-}
-
-// Return success response
-ob_clean();
-echo json_encode(['success' => true, 'message' => 'Login successful.']);
-// var_dump($_SESSION);
 $stmt->close();
 $conn->close();
+?>

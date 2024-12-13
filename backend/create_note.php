@@ -6,9 +6,9 @@ include 'db_config.php';
 $title = $_POST['title'] ?? '';
 $description = $_POST['description'] ?? '';
 $category = $_POST['category'] ?? '';
-$user_id = 1; // For example, replace this with actual user id (from session or authentication)
+$user_id = $_POST['user_id'] ?? null; // Retrieve user_id from POST data
 
-if (empty($title) || empty($description) || empty($category)) {
+if (empty($title) || empty($description) || empty($category) || !$user_id) {
     echo json_encode(['success' => false, 'message' => 'All fields are required.']);
     exit;
 }
@@ -56,4 +56,3 @@ if ($query->execute()) {
 // Close connection
 $query->close();
 $conn->close();
-?>

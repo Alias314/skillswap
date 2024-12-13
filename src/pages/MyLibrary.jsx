@@ -1,8 +1,10 @@
+// MyLibrary.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import CreateNoteModal from "../components/CreateNoteModal";
-import DeleteNoteModal from "../components/DeleteNoteModal"; // Import the DeleteNoteModal
+import DeleteNoteModal from "../components/DeleteNoteModal";
 import { NavLink } from "react-router-dom";
+import NotesGrid from "../components/NotesGrid"; // Importing NotesGrid Component
 
 function MyLibrary() {
   const [activeTab, setActiveTab] = useState("bookmarks");
@@ -11,27 +13,40 @@ function MyLibrary() {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState(null); // Store note to delete
+  const [noteToDelete, setNoteToDelete] = useState(null);
 
-  // Categories for the dropdown
   const categories = [
-    "Science", "Math", "Programming", "Biology", "Chemistry", "Physics", 
-    "Literature", "History", "Geography", "Economics", "Psychology", 
-    "Philosophy", "Engineering", "Data Science", "Medicine", "Law", 
-    "Architecture", "Algorithms", "Web Development", "Mobile Development", 
-    "Artificial Intelligence", "Cybersecurity", "English", "Spanish", 
-    "French", "Chinese", "Art and Design", "Music Theory", "Cooking", 
-    "Photography", "Writing", "Business", "Finance", "Project Management", 
-    "Public Speaking", "Nutrition", "Exercise Science", "Mental Health",
+    "Architecture",
+    "Science",
+    "Technology",
+    "Mathematics",
+    "Arts and Humanities",
+    "Social Sciences",
+    "Health and Medicine",
+    "Business and Finance",
+    "Education",
+    "Engineering",
+    "Languages",
+    "Computer Science",
+    "Law and Governance",
+    "Psychology",
+    "Philosophy",
+    "Lifestyle and Wellness",
   ];
 
-  // Fetch notes from the server
   const fetchNotes = async (type) => {
     setLoading(true);
     setError(null);
+    const userId = localStorage.getItem("user_id");
+
+    if (!userId) {
+      setError("User is not logged in.");
+      return;
+    }
+
     try {
       const response = await axios.get(
-        `http://localhost/skillswap/backend/my_library.php?type=${type}`
+        `http://localhost/skillswap/backend/my_library.php?type=${type}&user_id=${userId}`
       );
       setNotes(response.data);
     } catch (err) {
@@ -41,7 +56,6 @@ function MyLibrary() {
     }
   };
 
-  // Fetch notes when the active tab changes
   useEffect(() => {
     fetchNotes(activeTab);
   }, [activeTab]);
@@ -51,6 +65,17 @@ function MyLibrary() {
     formData.append("title", newNote.title);
     formData.append("description", newNote.description);
     formData.append("category", newNote.category);
+
+    // Get the user_id from localStorage
+    const userId = localStorage.getItem("user_id");
+
+    if (userId) {
+      formData.append("user_id", userId); // Add user_id to the formData
+    } else {
+      setError("User is not logged in."); // Handle the case where user_id is not in localStorage
+      return;
+    }
+
     if (newNote.coverImage) {
       formData.append("coverImage", newNote.coverImage);
     }
@@ -77,7 +102,7 @@ function MyLibrary() {
   const handleDeleteNote = async () => {
     try {
       const response = await axios.delete(
-        `http://localhost/skillswap/backend/delete_note.php?note_id=${noteToDelete}`
+        "http://localhost/skillswap/backend/delete_note.php?note_id=${noteToDelete}"
       );
       if (response.data.success) {
         fetchNotes(activeTab); // Refresh notes
@@ -90,60 +115,13 @@ function MyLibrary() {
     }
   };
 
-  const renderNotesGrid = (notes) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      {notes.map((note) => (
-        <div key={note.note_id} className="relative">
-          <NavLink
-            to={`/note/${note.note_id}`}
-            className="bg-white w-full max-w-xs mx-auto shadow-sm hover:shadow-xl transition-transform duration-300 transform hover:scale-105"
-          >
-            <div className="w-full h-40 bg-gray-200 mb-3 flex items-center justify-center relative">
-              {note.cover_image ? (
-                <img
-                  src={'backend/' + note.cover_image}
-                  alt={note.title}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              ) : (
-                <span className="text-gray-500">No Image</span>
-              )}
-            </div>
-            <div className="pl-3">
-              <h2 className="text-md font-medium text-gray-800 mb-2">
-                {note.title}
-              </h2>
-              <p className="text-sm text-gray-600 mb-2">
-                By {note.author || "Unknown"}
-              </p>
-            </div>
-          </NavLink>
-  
-          <NavLink
-            to={`/edit-note/${note.note_id}`} // Pass note_id to the edit route
-            className="absolute top-2 right-2 px-3 py-1 bg-blue-500 text-white rounded-lg"
-          >
-            Edit
-          </NavLink>
-
-          <button
-            onClick={() => {
-              setNoteToDelete(note.note_id); // Set the note_id to delete
-              setIsDeleteModalOpen(true); // Open delete confirmation modal
-            }}
-            className="absolute top-2 right-16 px-3 py-1 bg-red-500 text-white rounded-lg"
-          >
-            Delete
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <div className="flex items-center justify-center">
       <div className="w-[70%] min-h-screen relative top-5 p-10">
-        <div className="h-[52rem] bg-white p-4 rounded-lg shadow-lg">
+        {/* Update the parent container to use h-auto or min-h-screen */}
+        <div className="bg-white p-4 rounded-lg shadow-lg min-h-full">
+          {" "}
+          {/* Changed from h-[52rem] */}
           <div className="flex justify-between mb-6">
             <div className="flex space-x-4">
               <button
@@ -174,13 +152,12 @@ function MyLibrary() {
               Create Note
             </button>
           </div>
-
           {loading && <p className="text-gray-600 mt-4">Loading...</p>}
           {error && <p className="text-red-600 mt-4">{error}</p>}
           {!loading && !error && (
             <>
               {notes.length > 0 ? (
-                renderNotesGrid(notes)
+                <NotesGrid notes={notes} handleDeleteNote={handleDeleteNote} /> 
               ) : (
                 <p className="text-gray-600 mt-4">No notes available.</p>
               )}
@@ -196,7 +173,6 @@ function MyLibrary() {
         categories={categories}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteNoteModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

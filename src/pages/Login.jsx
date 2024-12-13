@@ -35,6 +35,14 @@ function Login() {
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
         if (data.success) {
+          // Save the user_id to localStorage
+          if (data.user_id) {
+            localStorage.setItem("user_id", data.user_id);
+          } else {
+            console.warn("user_id not found in response:", data);
+          }
+
+          // Navigate to homepage
           navigate("/homepage");
         } else {
           setError(data.message || "Login failed.");
