@@ -31,7 +31,7 @@ To get started with SkillSwap, follow these steps:
    ```bash
    npm install
 
-4. **Set up Firebase**:
+4. **Set up phpmyadmin**:
 - Open XAMPP and start the Apache and MySQL services
 - Copy the backend files into the XAMPP htdocs directory
 - Import the database schema into MySQL. The SQL file is located in /backend/databae/skillswap.sql. Make sure to name the database "skillswap" 
