@@ -14,8 +14,24 @@ if (empty($category)) {
     exit;
 }
 
-// Prepare the SQL query to fetch notes by category
-$sql = "SELECT note_id, title, cover_image, description FROM note WHERE category = ?";
+// Prepare the SQL query to fetch notes by category, including user data
+$sql = "
+    SELECT 
+        n.note_id, 
+        n.title, 
+        n.cover_image, 
+        n.description, 
+        u.username, 
+        u.profile_image
+    FROM 
+        note n
+    INNER JOIN 
+        user u 
+    ON 
+        n.user_id = u.user_id
+    WHERE 
+        n.category = ?
+";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $category);
 $stmt->execute();
@@ -37,4 +53,3 @@ if ($result->num_rows > 0) {
 // Close connection
 $stmt->close();
 $conn->close();
-?>

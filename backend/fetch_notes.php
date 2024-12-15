@@ -3,7 +3,8 @@ include "db_config.php";
 
 $sql = "SELECT n.note_id, n.title, n.description, n.cover_image, n.category, n.created_at, u.username, u.profile_image
         FROM note n
-        JOIN user u ON n.user_id = u.user_id";
+        JOIN user u ON n.user_id = u.user_id
+        WHERE n.status != 'banned'";
 
 $result = $conn->query($sql);
 

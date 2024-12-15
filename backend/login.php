@@ -14,7 +14,7 @@ if (empty($email) || empty($password)) {
 }
 
 // Prepare and execute query
-$sql = "SELECT user_id, email, password FROM user WHERE email = ?";
+$sql = "SELECT user_id, email, password, status FROM user WHERE email = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $email);
 $stmt->execute();
@@ -23,13 +23,20 @@ $result = $stmt->get_result();
 if ($result->num_rows === 1) {
     $user = $result->fetch_assoc();
 
+    // Check if user is banned
+    if ($user['status'] === 'banned') {
+        echo json_encode(["success" => false, "message" => "Your account is banned. Please contact support."]);
+        exit;
+    }
+
     // Verify password
     if (password_verify($password, $user['password'])) {
         // Login successful
         echo json_encode([
             "success" => true,
             "message" => "Login successful",
-            "user_id" => $user['user_id'] // Include user_id in the response
+            "user_id" => $user['user_id'], // Include user_id in the response
+            "status" => $user['status'] // Include user status in the response
         ]);
     } else {
         // Password does not match
@@ -42,4 +49,3 @@ if ($result->num_rows === 1) {
 
 $stmt->close();
 $conn->close();
-?>

@@ -1,74 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
-import SidebarEditNote from "../layout/SidebarEditNote"; // Import the SidebarEditNote component
-
-const InfoComponent = ({ title, content, onTitleChange, onChange, quillRef, imageHandler }) => (
-  <div className="min-h-auto bg-white shadow-md p-4 border border-gray-300 flex flex-col">
-    <input
-      type="text"
-      value={title}
-      onChange={(e) => onTitleChange(e.target.value)}
-      placeholder="Enter section title"
-      className="text-xl font-semibold mb-2 w-full p-1 border-b-2 border-gray-300 focus:outline-none focus:border-blue-500"
-    />
-    <div className="flex-grow">
-      <ReactQuill
-        value={content}
-        onChange={onChange}
-        modules={{
-          toolbar: [
-            // Text formatting options
-            [{ header: [1, 2, 3, false] }], // Headers
-            ["bold", "italic", "underline", "strike"], // Basic text formatting
-            [{ script: "sub" }, { script: "super" }], // Subscript/Superscript
-            [{ list: "ordered" }, { list: "bullet" }], // Lists
-            [{ indent: "-1" }, { indent: "+1" }], // Indent options
-            [{ align: [] }], // Alignment (left, center, right, justify)
-            [{ direction: "rtl" }], // Right-to-left text
-            // Color and background
-            [{ color: [] }, { background: [] }], 
-            // Media
-            ["link", "image", "video"], // Insert links, images, and videos
-            ["blockquote", "code-block"], // Blockquote and code block
-            ["clean"], // Remove formatting
-          ],
-        }}
-        formats={[
-          "header",
-          "bold",
-          "italic",
-          "underline",
-          "strike",
-          "script",
-          "list",
-          "bullet",
-          "indent",
-          "align",
-          "direction",
-          "color",
-          "background",
-          "link",
-          "image",
-          "video",
-          "blockquote",
-          "code-block",
-        ]}
-        className="h-auto min-h-32"
-        placeholder="Write content..."
-        theme="snow"
-        ref={quillRef}
-      />
-    </div>
-  </div>
-);
+import SidebarEditNote from "../components/SidebarEditNote";
+import InfoComponent from "../components/InfoComponent";
+import {
+  saveNoteData,
+  addChapterAPI,
+  deleteComponentAPI,
+} from "../components/noteAPI";
 
 const EditNote = () => {
   const { noteId } = useParams();
   const [chapters, setChapters] = useState([]);
   const [selectedChapter, setSelectedChapter] = useState(0);
-  const quillRef = useRef(); // Create a ref for ReactQuill
+  const quillRef = useRef();
 
   useEffect(() => {
     const fetchNoteData = async () => {
@@ -100,26 +44,7 @@ const EditNote = () => {
     };
 
     try {
-      const response = await fetch(
-        "http://localhost/skillswap/backend/save_chapter.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ noteId, chapter: newChapter }),
-        }
-      );
-
-      const rawText = await response.text();
-      console.log("Raw response:", rawText);
-
-      if (!rawText) {
-        throw new Error("Empty response from the server");
-      }
-
-      const result = JSON.parse(rawText);
-
+      const result = await addChapterAPI(noteId, newChapter);
       if (result.success && result.chapter_id) {
         newChapter.chapter_id = result.chapter_id;
         setChapters((prevChapters) => {
@@ -139,11 +64,14 @@ const EditNote = () => {
   const addInfoComponent = () => {
     const updatedChapters = [...chapters];
     updatedChapters[selectedChapter].components.push({
+      id: `component-${Date.now()}`, // Unique ID
       title: "Info Section",
       content: "",
+      ref: React.createRef(), // Unique ref for each Quill instance
     });
     setChapters(updatedChapters);
   };
+  
 
   const updateInfoTitle = (index, title) => {
     const updatedChapters = [...chapters];
@@ -157,19 +85,28 @@ const EditNote = () => {
     setChapters(updatedChapters);
   };
 
+  const deleteInfoComponent = async (componentIndex) => {
+    const componentId =
+      chapters[selectedChapter].components[componentIndex].component_id;
+
+    try {
+      const result = await deleteComponentAPI(componentId);
+      if (result.success) {
+        const updatedChapters = [...chapters];
+        updatedChapters[selectedChapter].components.splice(componentIndex, 1);
+        setChapters(updatedChapters);
+      } else {
+        alert("Failed to delete the component.");
+      }
+    } catch (error) {
+      console.error("Error deleting component:", error);
+      alert("An error occurred while deleting the component.");
+    }
+  };
+
   const saveData = async () => {
     try {
-      const response = await fetch(
-        "http://localhost/skillswap/backend/save_note.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ noteId, chapters }),
-        }
-      );
-
+      const response = await saveNoteData(noteId, chapters);
       if (response.ok) {
         alert("Data saved successfully!");
       } else {
@@ -181,47 +118,69 @@ const EditNote = () => {
     }
   };
 
-  // Image handler
-  const imageHandler = () => {
-    console.log("Image handler triggered");
+  const updateChapterTitle = (chapterId, newTitle) => {
+    // Update the chapter title locally
+    const updatedChapters = chapters.map((chapter) => {
+      if (chapter.chapter_id === chapterId) {
+        return { ...chapter, title: newTitle }; // Update the title
+      }
+      return chapter;
+    });
+    setChapters(updatedChapters);
 
-    const input = document.createElement("input");
-    input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
-    input.click();
-
-    input.onchange = async () => {
-      const file = input.files[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append("image", file);
-
+    // Optionally, update the title in the backend
+    const updateTitleInBackend = async () => {
       try {
-        const response = await fetch("http://localhost/skillswap/backend/upload_image.php", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          const imageUrl = data.imageUrl;
-          console.log("Image URL:", imageUrl);
-
-          const quill = quillRef.current.getEditor();
-          const range = quill.getSelection();
-          if (range) {
-            quill.insertEmbed(range.index, "image", imageUrl);
+        const response = await fetch(
+          "http://localhost/skillswap/backend/update_chapter_title.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chapter_id: chapterId, title: newTitle }),
           }
-        } else {
-          alert("Failed to upload image.");
+        );
+        const data = await response.json();
+        if (!data.success) {
+          alert("Failed to update title in the database.");
         }
       } catch (error) {
-        console.error("Error uploading image:", error);
-        alert("An error occurred while uploading the image.");
+        console.error("Error updating chapter title:", error);
+        alert("An error occurred while updating the chapter title.");
       }
     };
+
+    updateTitleInBackend();
+  };
+
+  // Chapter deletion function
+  const deleteChapter = async (chapterId) => {
+    if (window.confirm("Are you sure you want to delete this chapter?")) {
+      try {
+        const response = await fetch(
+          "http://localhost/skillswap/backend/delete_chapter.php",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ chapter_id: chapterId }),
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          setChapters((prevChapters) =>
+            prevChapters.filter((chapter) => chapter.chapter_id !== chapterId)
+          );
+          alert("Chapter deleted successfully.");
+        } else {
+          alert(data.message || "Failed to delete chapter.");
+        }
+      } catch (error) {
+        console.error("Error deleting chapter:", error);
+        alert("An error occurred while deleting the chapter.");
+      }
+    }
   };
 
   return (
@@ -232,6 +191,8 @@ const EditNote = () => {
         selectedChapter={selectedChapter}
         setSelectedChapter={setSelectedChapter}
         addChapter={addChapter}
+        deleteChapter={deleteChapter} // Pass deleteChapter to Sidebar
+        updateChapterTitle={updateChapterTitle}
       />
 
       {/* Main Content Area */}
@@ -242,6 +203,7 @@ const EditNote = () => {
         >
           Add Info Component
         </button>
+
         <div>
           {chapters[selectedChapter]?.components.map((component, index) => (
             <InfoComponent
@@ -251,10 +213,11 @@ const EditNote = () => {
               onTitleChange={(title) => updateInfoTitle(index, title)}
               onChange={(content) => updateInfoContent(index, content)}
               quillRef={quillRef}
-              imageHandler={imageHandler} // Pass imageHandler to InfoComponent
+              onDelete={() => deleteInfoComponent(index)} // Pass the delete function
             />
           ))}
         </div>
+
         <button
           onClick={saveData}
           className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 mt-6"

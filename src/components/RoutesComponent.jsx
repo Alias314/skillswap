@@ -11,6 +11,7 @@ import SignUp from "../pages/SignUp";
 import MyLibrary from "../pages/MyLibrary";
 import ChapterView from "../pages/ChapterView";
 import SearchView from "../pages/SearchView";
+import AdminPage from "../pages/AdminPage";
 
 const isAuthenticated = () => {
   // Replace this logic with your actual authentication check, e.g., token existence
@@ -42,6 +43,7 @@ const RoutesComponent = () => {
           element={<ChapterView />}
         />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>
   );

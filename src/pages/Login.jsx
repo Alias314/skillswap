@@ -35,6 +35,12 @@ function Login() {
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
         if (data.success) {
+          // Check the user's status
+          if (data.status === "banned") {
+            setError("Your account is banned.");
+            return;
+          }
+
           // Save the user_id to localStorage
           if (data.user_id) {
             localStorage.setItem("user_id", data.user_id);

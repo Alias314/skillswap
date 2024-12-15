@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter as Router } from "react-router-dom";
 import RoutesComponent from "./components/RoutesComponent";
+import 'react-quill/dist/quill.snow.css'; // Quill's default theme
 
 function App() {
   return (

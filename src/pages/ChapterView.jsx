@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import SidebarChapterView from "../layout/SidebarChapterView";
+import "react-quill/dist/quill.snow.css"; // Quill's default theme
+// import "./ChapterView.css"; // Custom styles for additional Quill support
 
 const ChapterView = () => {
   const { noteId, chapterId } = useParams();
@@ -34,7 +36,9 @@ const ChapterView = () => {
 
     const fetchChaptersList = async () => {
       try {
-        const response = await fetch(`http://localhost/skillswap/backend/get_chapters_list.php`);
+        const response = await fetch(
+          "http://localhost/skillswap/backend/get_chapters_list.php"
+        );
         const data = await response.json();
 
         if (data.error) {
@@ -74,17 +78,19 @@ const ChapterView = () => {
             {components.map((component) => (
               <div
                 key={component.component_id}
-                className="bg-white shadow-md p-6 border border-gray-200"
+                className="bg-white shadow-md border border-gray-200"
               >
-                <h2 className="text-xl font-bold text-gray-800 mb-4">
+                <h2 className="w-full text-xl font-bol bg-blue-500 text-white mb-4 text-center py-4 m-0 shadow-lg border border-gray-500">
                   {component.title}
                 </h2>
-                <div
-                  className="text-gray-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: component.content,
-                  }}
-                />
+                <div className="p-6">
+                  <div
+                    className="ql-editor text-gray-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{
+                      __html: component.content,
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </div>

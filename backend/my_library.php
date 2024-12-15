@@ -13,16 +13,16 @@ if (!$type || !$user_id) {
 
 $sql = '';
 if ($type === 'bookmarks') {
-    $sql = "SELECT n.note_id, n.title, n.description, n.cover_image, u.username AS author, u.profile_image
+    $sql = "SELECT n.note_id, n.title, n.description, n.cover_image, n.status, u.username AS author, u.profile_image
             FROM bookmark b
             JOIN note n ON b.note_id = n.note_id
             JOIN user u ON n.user_id = u.user_id
-            WHERE b.user_id = ?";
+            WHERE b.user_id = ? AND n.status != 'banned'";
 } elseif ($type === 'userNotes') {
-    $sql = "SELECT n.note_id, n.title, n.description, n.cover_image, u.username AS author, u.profile_image
+    $sql = "SELECT n.note_id, n.title, n.description, n.cover_image, n.status, u.username AS author, u.profile_image
             FROM note n
             JOIN user u ON n.user_id = u.user_id
-            WHERE n.user_id = ?";
+            WHERE n.user_id = ? AND n.status != 'banned'";
 } else {
     echo json_encode(['error' => 'Invalid note type.']);
     exit;

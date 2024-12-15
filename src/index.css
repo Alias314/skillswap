@@ -70,3 +70,61 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Add this to your global CSS (index.css or App.css) */
+.ql-align-center {
+  text-align: center;
+}
+
+.ql-editor {
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+.ql-indent-1 {
+  margin-left: 20px;
+}
+
+.ql-indent-2 {
+  margin-left: 40px;
+}
+
+.ql-align-center {
+  text-align: center;
+}
+
+.ql-align-right {
+  text-align: right;
+}
+
+.ql-align-justify {
+  text-align: justify;
+}
+
+.ql-syntax {
+  background-color: #23241f;
+  color: white;
+  padding: 100px;
+  border-radius: 5px;
+  font-family: 'Courier New', monospace;
+  overflow-x: auto;
+}
+
+blockquote {
+  border-left: 4px solid #ccc;
+  padding-left: 16px;
+  margin: 10px 0;
+  font-style: italic;
+}
+
+h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.5em 0;
+}
+
+h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin: 0.5em 0;
+}
